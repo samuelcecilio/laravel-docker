@@ -1,5 +1,5 @@
-# PHP 7.4 FPM
-FROM php:7.4-fpm
+# PHP 8.0 FPM
+FROM php:8.0-fpm
 
 # Set working directory
 WORKDIR /var/www
@@ -40,8 +40,15 @@ RUN apt-get update -yqq && apt-get install -y \
     zlib1g-dev
 
 # Install PECL and PEAR extensions
-RUN pecl install redis
-RUN docker-php-ext-enable redis
+RUN pecl install \
+    redis \
+    grpc \
+    protobuf
+
+RUN docker-php-ext-enable \
+    redis \
+    grpc \
+    protobuf
 
 # Configure php extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg
