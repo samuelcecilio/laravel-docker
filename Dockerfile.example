@@ -1,0 +1,30 @@
+# Base image
+FROM samuelcecilio/laravel-docker:8.1
+
+# Add user
+RUN groupadd --force -g 1000 laravel
+RUN useradd -ms /bin/bash --no-user-group -g 1000 -u 1337 laravel
+
+# Copy config files
+COPY ./www.conf /etc/php/8.1/fpm/pool.d/www.conf
+COPY ./php.ini /etc/php/8.1/cli/conf.d/99-laravel.ini
+# COPY ./xdebug.ini /etc/php/8.1/cli/conf.d/
+
+# Copy composer files
+COPY composer.lock composer.json /var/www/html/
+
+# Install composer dependencies
+RUN composer install \
+    --no-ansi \
+    --no-interaction \
+    --no-scripts \
+    --working-dir=/var/www/html
+
+# Copy existing application directory contents
+COPY --chown=laravel:laravel . /var/www/html
+
+# Expose port
+EXPOSE 80
+
+# Entrypoint
+ENTRYPOINT ["sh", "/var/www/html/entrypoint.sh"]

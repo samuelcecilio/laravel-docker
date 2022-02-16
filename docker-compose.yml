@@ -1,0 +1,64 @@
+version: "3"
+services:
+  laravel:
+    build:
+      context: .
+      dockerfile: local.Dockerfile
+    image: laravel:1.0
+    container_name: laravel
+    ports:
+      - ${APP_PORT:-80}:80
+      - ${XDEBUG_PORT:-9003}:9003
+    environment:
+      CHOKIDAR_USEPOLLING: 1
+      COMPOSER_MEMORY_LIMIT: -1
+    volumes:
+      - .:/var/www/html
+      - ./www.conf:/etc/php/8.1/fpm/pool.d/www.conf
+      - ./php.ini:/etc/php/8.1/cli/conf.d/99-laravel.ini
+    networks:
+      - laravel
+    depends_on:
+      - mysql
+      - redis
+  mysql:
+    image: "mysql/mysql-server:8.0"
+    container_name: laravel_mysql
+    ports:
+      - ${FORWARD_DB_PORT:-3306}:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD}"
+      MYSQL_ROOT_HOST: "%"
+      MYSQL_DATABASE: "${DB_DATABASE}"
+      MYSQL_USER: "${DB_USERNAME}"
+      MYSQL_PASSWORD: "${DB_PASSWORD}"
+      MYSQL_ALLOW_EMPTY_PASSWORD: 1
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - laravel
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-p${DB_PASSWORD}"]
+      retries: 3
+      timeout: 5s
+  redis:
+    image: redis:6.0
+    container_name: laravel_redis
+    ports:
+      - ${FORWARD_REDIS_PORT:-6379}:6379
+    volumes:
+      - redis-data:/data
+    networks:
+      - laravel
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      retries: 3
+      timeout: 5s
+networks:
+  laravel:
+    driver: bridge
+volumes:
+  mysql-data:
+    driver: local
+  redis-data:
+    driver: local
